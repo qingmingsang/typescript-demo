@@ -186,7 +186,9 @@ let myArray: StringArray;
 myArray = ["Bob", "Fred"];
 
 let myStr: string = myArray[0];
-//console.log(myStr)//"Bob"
+ //console.log(myStr)//"Bob"
+
+
 
 
 
