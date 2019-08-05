@@ -1,0 +1,252 @@
+//泛型
+
+//如果没有泛型，我们要么必须给身份函数一个特定的类型：
+function identity(arg: number): number {
+  return arg;
+}
+//或者，我们可以使用以下any类型描述身份函数：
+function identity2(arg: any): any {
+  return arg;
+}
+//虽然使用any肯定是通用的，因为它会导致函数接受类型的任何和所有类型arg，
+//但实际上我们正在丢失函数返回时该类型的信息。
+//如果我们传入一个数字，我们唯一的信息就是可以返回任何类型。
+
+//相反，我们需要一种捕获参数类型的方法，以便我们也可以使用它来表示返回的内容。
+//在这里，我们将使用一个类型变量，一种特殊的变量，它适用于类型而不是值。
+
+function identity3<T>(arg: T): T {
+  return arg;
+}
+//我们现在已经为T身份函数添加了一个类型变量。
+//这T允许我们捕获用户提供的类型（例如number），以便我们稍后可以使用该信息。
+//在这里，我们T再次使用返回类型。
+//在检查时，我们现在可以看到相同的类型用于参数和返回类型。
+//这允许我们在功能的一侧和另一侧传输该类型信息。
+
+//我们说这个版本的identity3函数是通用的，因为它适用于各种类型。
+//与使用不同any，它也像identity使用数字作为参数和返回类型的第一个函数一样精确（即，它不会丢失任何信息）。
+
+//一旦我们编写了通用标识函数，我们就可以用两种方式之一来调用它。
+
+//第一种方法是将所有参数（包括type参数）传递给函数：
+let output = identity3<string>("myString");  // type of output will be 'string'
+
+//这里我们明确地设置T为string函数调用的参数之一，使用参数<>周围而不是()。
+
+//第二种方式也许是最常见的方式。
+//这里我们使用类型参数推断 - 也就是说，我们希望编译器T根据我们传入的参数的类型自动为我们设置值：
+
+let output2 = identity3("myString");  // type of output will be 'string'
+//请注意，我们不必在尖括号（<>）中显式传递类型; 编译器只查看了值"myString"，并设置T为其类型。
+//虽然类型参数推断可以是一个有用的工具来保持代码更短和更易读，但是当编译器无法推断类型时，您可能需要显式传入类型参数，就像在前面的示例中那样，更复杂的示例中可能会发生这种情况。 
+
+//使用通用类型变量
+
+//当您开始使用泛型时，您会注意到当您创建泛型函数时identity，编译器将强制您正确使用函数体中的任何通用类型参数。
+//也就是说，您实际上将这些参数视为任何和所有类型。
+
+//让我们identity从早先的功能：
+
+function identity4<T>(arg: T): T {
+  return arg;
+}
+
+//如果我们还要在arg每次调用时将参数的长度记录到控制台，该怎么办？我们可能想写这个：
+
+function loggingIdentity<T>(arg: T): T {
+  //console.log(arg.length);  // Error: T doesn't have .length
+  return arg;
+}
+//当我们这样做时，编译器会给我们一个错误，我们正在使用它的.length成员arg，但我们说没有任何地方有arg这个成员。
+//请记住，我们之前说过，这些类型变量代表任何和所有类型，因此使用此函数的人可能已经传入number，而没有.length成员。
+
+//假设我们实际上打算将此函数用于数组T而不是T直接数组。
+//由于我们正在使用数组，因此该.length成员应该可用。
+//我们可以像创建其他类型的数组一样来描述它：
+function loggingIdentity2<T>(arg: T[]): T[] {
+  console.log(arg.length);  // Array has a .length, so no more error
+  return arg;
+}
+//你可以读取类型loggingIdentity2为“泛型函数loggingIdentity接受一个类型参数T，
+//一个参数arg是一个Ts 数组，并返回一个Ts 数组。”
+//如果我们传入一个数组数组，我们得到一个数组数字退出，就像T绑定一样number。
+//这允许我们使用我们的泛型类型变量T作为我们正在使用的类型的一部分，而不是整个类型，
+//从而为我们提供更大的灵活性。
+
+//我们也可以用这种方式编写示例：
+function loggingIdentity3<T>(arg: Array<T>): Array<T> {
+  console.log(arg.length);  // Array has a .length, so no more error
+  return arg;
+}
+
+//通用类型
+//在前面的部分中，我们创建了适用于各种类型的通用标识函数。
+//在本节中，我们将探讨函数本身的类型以及如何创建通用接口。
+
+//泛型函数的类型与非泛型函数的类型一样，首先列出类型参数，类似于函数声明：
+function identity5<T>(arg: T): T {
+  return arg;
+}
+let myIdentity: <T>(arg: T) => T = identity5;
+
+//我们也可以为类型中的泛型类型参数使用不同的名称，只要类型变量的数量和类型变量的使用方式排成一行即可。
+function identity6<T>(arg: T): T {
+  return arg;
+}
+let myIdentity2: <U>(arg: U) => U = identity6;
+
+//我们还可以将泛型类型编写为对象文字类型的调用签名：
+function identity7<T>(arg: T): T {
+  return arg;
+}
+let myIdentity3: { <T>(arg: T): T } = identity7;
+
+//这促使我们编写了第一个通用接口。让我们从前面的例子中获取对象文字并将其移动到一个接口：
+interface GenericIdentityFn {
+  <T>(arg: T): T;
+}
+function identity8<T>(arg: T): T {
+  return arg;
+}
+let myIdentity4: GenericIdentityFn = identity8;
+
+//在类似的示例中，我们可能希望将泛型参数移动为整个接口的参数。
+//这让我们可以看到我们通用的类型（例如，Dictionary<string>而不仅仅是Dictionary）。
+//这使得类型参数对接口的所有其他成员可见。
+
+interface GenericIdentityFn2<T> {
+  (arg: T): T;
+}
+function identity9<T>(arg: T): T {
+  return arg;
+}
+let myIdentity5: GenericIdentityFn2<number> = identity9;
+//我们现在拥有一个非泛型函数签名，而不是描述泛型函数，它是泛型类型的一部分。
+//当我们使用时GenericIdentityFn，我们现在还需要指定相应的类型参数（此处number为:)，
+//有效地锁定底层调用签名将使用的内容。
+//了解何时将类型参数直接放在调用签名上以及何时将其放在接口本身上将有助于描述类型的哪些方面是通用的。
+
+//除了通用接口，我们还可以创建泛型类。注意，无法创建通用枚举和命名空间。
+
+
+//通用类
+//泛型类具有与通用接口类似的形状。
+//泛型类<>在类名称后面的尖括号（）中有一个泛型类型参数列表。
+
+class GenericNumber<T> {
+  zeroValue: T;
+  add: (x: T, y: T) => T;
+}
+
+let myGenericNumber = new GenericNumber<number>();
+myGenericNumber.zeroValue = 0;
+myGenericNumber.add = function (x, y) { return x + y; };
+//这是对GenericNumber类的一种非常直接的用法，
+//但您可能已经注意到没有任何限制它只使用该number类型。
+
+//我们可以改为使用string甚至更复杂的对象。
+let stringNumeric = new GenericNumber<string>();
+stringNumeric.zeroValue = "";
+stringNumeric.add = function (x, y) { return x + y; };
+console.log(stringNumeric.add(stringNumeric.zeroValue, "test"));
+//就像接口一样，将类型参数放在类本身上可以让我们确保类的所有属性都使用相同的类型。
+//正如我们在类的部分中所介绍的，类有两个类型：静态侧和实例侧。
+//泛型类只是在它们的实例端而不是它们的静态端是通用的，所以在使用类时，静态成员不能使用类的类型参数。
+
+
+//通用约束
+
+//如果还记得前面的示例，有时可能希望编写一个泛型函数，该函数适用于一组类型，
+//可以在这些函数中了解该类型集将具有哪些功能。
+
+//在我们的loggingIdentity示例中，我们希望能够访问.length属性arg，
+//但编译器无法证明每个类型都有.length属性，因此它警告我们不能做出这个假设。
+
+//我们不想使用任何和所有类型，而是希望限制此函数以使用任何和所有具有该.length属性的类型。
+//只要类型有这个成员，我们就允许它，但它至少需要有这个成员。
+//为此，我们必须将我们的要求列为对T的约束。
+
+//为此，我们将创建一个描述约束的接口。
+//在这里，我们将创建一个具有单个.length属性的接口，
+//然后我们将使用此接口和extends关键字来表示我们的约束：
+
+interface Lengthwise {
+  length: number;
+}
+function loggingIdentity4<T extends Lengthwise>(arg: T): T {
+  console.log(arg.length);  // Now we know it has a .length property, so no more error
+  return arg;
+}
+//由于泛型函数现在受到约束，因此它将不再适用于任何和所有类型：
+//loggingIdentity4(3);  // Error, number doesn't have a .length property
+
+//相反，我们需要传入其类型具有所有必需属性的值：
+loggingIdentity4({ length: 10, value: 3 });
+
+
+//在通用约束中使用类型参数
+
+//您可以声明受另一个类型参数约束的类型参数。
+//例如，在这里我们想从给定名称的对象中获取属性。
+//我们想确保我们不会意外地抓住不存在的属性obj，因此我们将在两种类型之间设置约束：
+
+function getProperty<T, K extends keyof T>(obj: T, key: K) {
+    return obj[key];
+}
+let x = { a: 1, b: 2, c: 3, d: 4 };
+getProperty(x, "a"); // okay
+//getProperty(x, "m"); // error: Argument of type 'm' isn't assignable to 'a' | 'b' | 'c' | 'd'.
+
+
+//在泛型中使用类类型
+
+//使用泛型在TypeScript中创建工厂时，必须通过构造函数引用类类型。例如，
+function create<T>(c: {new(): T; }): T {
+    return new c();
+}
+//更高级的示例使用prototype属性来推断和约束构造函数与类类型的实例端之间的关系。
+class BeeKeeper {
+    hasMask: boolean;
+}
+
+class ZooKeeper {
+    nametag: string;
+}
+
+class Animal {
+    numLegs: number;
+}
+
+class Bee extends Animal {
+    keeper: BeeKeeper;
+}
+
+class Lion extends Animal {
+    keeper: ZooKeeper;
+}
+
+function createInstance<A extends Animal>(c: new () => A): A {
+    return new c();
+}
+
+createInstance(Lion).keeper.nametag;  // typechecks!
+createInstance(Bee).keeper.hasMask;   // typechecks!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
