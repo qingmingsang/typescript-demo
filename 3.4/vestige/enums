@@ -1,0 +1,280 @@
+//枚举
+
+//枚举允许我们定义一组命名常量。
+//使用枚举可以更容易地记录意图，或创建一组不同的案例。
+//TypeScript提供基于数字和基于字符串的枚举。
+
+//数字枚举
+
+//我们首先从数字枚举开始，如果你来自其他语言，可能会更熟悉。
+//可以使用enum关键字定义枚举。
+enum Direction {
+  Up = 1,
+  Down,
+  Left,
+  Right,
+}
+//上面，我们有一个Up初始化的数字枚举1。
+//从该点开始，所有以下成员都会自动递增。
+//换句话说，Direction.Up具有价值1， Down拥有2，Left拥有3和Right拥有4。
+
+//如果我们想要，我们可以完全放弃初始化器：
+enum Direction2 {
+  Up,
+  Down,
+  Left,
+  Right,
+}
+//在这里，Up将具有值0，Down将具有1等等。
+//这种自动递增行为对于我们可能不关心成员值本身但是要注意每个值与同一枚举中的其他值不同的情况很有用。
+
+//使用枚举很简单：只需将任何成员作为enum本身的属性访问，并使用枚举的名称声明类型：
+enum Response2 {
+  No = 0,
+  Yes = 1,
+}
+function respond(recipient: string, message: Response): void {
+  // ...
+}
+//respond("Princess Caroline", Response2.Yes) //error?
+
+//数字枚举可以在计算和常量成员中混合使用（见下文）。
+//简而言之，没有初始化器的枚举要么必须是第一个，
+//要么必须在用数字常量或其他常量枚举成员初始化的数字枚举之后。
+
+//换句话说，不允许以下内容：
+enum E {
+  //A = getSomeValue(),
+  //B, // error! 'A' is not constant-initialized, so 'B' needs an initializer
+}
+
+
+//字符串枚举
+
+//字符串枚举是一个类似的概念，但有一些微妙的运行时差异，如下所述。
+//在字符串枚举中，每个成员必须使用字符串文字或其他字符串枚举成员进行常量初始化。
+
+enum Direction3 {
+  Up = "UP",
+  Down = "DOWN",
+  Left = "LEFT",
+  Right = "RIGHT",
+}
+//虽然字符串枚举没有自动递增行为，但字符串枚举具有良好“序列化”的好处。
+//换句话说，如果你正在调试并且必须读取数字枚举的运行时值，
+//那么该值通常是不透明的 - 它本身并没有传达任何有用的含义（尽管反向映射通常可以帮助），
+//字符串枚举允许你在代码运行时提供有意义且可读的值，与枚举成员本身的名称无关。
+
+
+//异构的枚举
+
+//技术上的枚举可以与字符串和数字成员混合，但不清楚为什么你会这样做：
+
+enum BooleanLikeHeterogeneousEnum {
+  No = 0,
+  Yes = "YES",
+}
+//除非真的想以巧妙的方式利用JavaScript的运行时行为，否则建议不要这样做。
+
+
+//计算和常数成员
+
+//每个枚举构件都具有与其相关联的值，其可以是恒定的或计算的。在以下情况下，枚举成员被视为常量：
+
+//它是枚举中的第一个成员，它没有初始化程序，在这种情况下，它被赋值0：
+// E.X is constant:
+enum E { X }
+//它没有初始化程序，前面的枚举成员是一个数字常量。
+//在这种情况下，当前枚举成员的值将是前一个枚举成员的值加一。
+
+// All enum members in 'E1' and 'E2' are constant.
+enum E1 { X, Y, Z }
+enum E2 {
+  A = 1, B, C
+}
+
+//枚举成员使用常量枚举表达式初始化。
+//常量枚举表达式是TypeScript表达式的子集，可以在编译时进行完全计算。
+
+//表达式是一个常量枚举表达式，如果它是：
+//文字枚举表达式（基本上是字符串文字或数字文字）
+//对先前定义的常量枚举成员的引用（可以源自不同的枚举）
+//带括号的常量枚举表达式
+//+，-，~其中一个施加到恒定枚举表达一元运算符
+//+，-，*，/，%，<<，>>，>>>，&，|，^二元算常数的枚举表达式作为操作数
+
+//将常量枚举表达式计算为NaN或是一个编译时错误Infinity。
+
+//在所有其他情况下，枚举成员被视为已计算。
+enum FileAccess {
+  // constant members
+  None,
+  Read = 1 << 1,
+  Write = 1 << 2,
+  ReadWrite = Read | Write,
+  // computed member
+  G = "123".length
+}
+
+
+//联合枚举和枚举成员类型
+//有一个特殊的常量枚举成员子集未计算：文字枚举成员。
+//文字枚举成员是一个常量枚举成员，没有初始化值，或者初始化为的值
+
+//任何字符串文字（例如"foo"，"bar，"baz"）
+//任何数字文字（例如1，100）
+//应用于任何数字文本一个一元减号（例如-1，-100）
+//当枚举中的所有成员都具有文字枚举值时，会出现一些特殊的语义。
+
+//首先，枚举成员也成为类型！例如，我们可以说某些成员只能拥有枚举成员的值：
+
+enum ShapeKind {
+  Circle,
+  Square,
+}
+
+interface Circle {
+  kind: ShapeKind.Circle;
+  radius: number;
+}
+
+interface Square {
+  kind: ShapeKind.Square;
+  sideLength: number;
+}
+
+//let c: Circle = {
+//kind: ShapeKind.Square,
+//    ~~~~~~~~~~~~~~~~ Error!
+//radius: 100,
+//}
+
+
+//另一个变化是枚举类型本身有效地成为每个枚举成员的联合。
+//虽然我们还没有讨论过union类型，但是你需要知道的是，使用union枚举，
+//类型系统能够利用它知道枚举本身中存在的确切值集的事实。
+
+//因此，TypeScript可以捕获愚蠢的错误，我们可能会错误地比较值。例如：
+enum E2 {
+  Foo,
+  Bar,
+}
+
+function f(x: E2) {
+  //if (x !== E2.Foo || x !== E2.Bar) {
+  //                    ~~~~~~~~~~~
+  // Error! Operator '!==' cannot be applied to types 'E.Foo' and 'E.Bar'.
+  //}
+}
+//在该示例中，我们首先检查是否x是没有 E.Foo。
+//如果该检查成功，那么我们||将短路，并且'if'的主体将运行。
+//但是，如果检查没有成功，则x可以只为E.Foo，所以它是没有意义的，看它是否等于E.Bar。
+
+
+//运行时的枚举
+
+//枚举是运行时存在的真实对象。例如，以下枚举
+enum E3 {
+    X, Y, Z
+}
+//实际上可以传递给函数
+function f2(obj: { X: number }) {
+    return obj.X;
+}
+// Works, since 'E' has a property named 'X' which is a number.
+f2(E3);
+
+
+//编译时的枚举
+
+//尽管Enums是运行时存在的真实对象，但keyof关键字的工作方式与您对典型对象的预期不同。
+//相反，使用keyof typeof获取将所有枚举键表示为字符串的Type。
+
+enum LogLevel {
+    ERROR, WARN, INFO, DEBUG
+}
+
+/**
+ * This is equivalent to:
+ * type LogLevelStrings = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+ */
+type LogLevelStrings = keyof typeof LogLevel;
+
+function printImportant(key: LogLevelStrings, message: string) {
+    const num = LogLevel[key];
+    if (num <= LogLevel.WARN) {
+       console.log('Log level key is: ', key);
+       console.log('Log level value is: ', num);
+       console.log('Log level message is: ', message);
+    }
+}
+printImportant('ERROR', 'This is a message');
+
+
+//反向映射
+//除了创建具有成员属性名称的对象之外，数字枚举成员还获得从枚举值到枚举名称的反向映射。
+
+//例如，在此示例中：
+enum Enum3 {
+    A
+}
+let a = Enum3.A;
+let nameOfA = Enum3[a]; // "A"
+//TypeScript可能会将其编译为类似以下JavaScript的内容：
+
+var Enum4;
+(function (Enum) {
+    //Enum[Enum["A"] = 0] = "A";
+})(Enum4 || (Enum4 = {}));
+//var a2 = Enum4.A;//error
+//var nameOfA2 = Enum4[a2]; // "A"
+//在这个生成的代码中，枚举被编译成一个存储前向（name- > value）和反向（value- > name）映射的对象。
+//对其他枚举成员的引用始终作为属性访问发出，并且从不内联。
+
+//请记住，字符串枚举成员根本不会生成反向映射。
+
+
+//const枚举
+
+//在大多数情况下，枚举是一个非常有效的解决方案。但有时候要求更严格。
+//为了避免在访问枚举值时支付额外生成的代码和额外的间接费用，可以使用const枚举。
+
+//使用const我们的枚举上的修饰符定义Const 枚举：
+const enum Enum5 {
+    A = 1,
+    B = A * 2
+}
+//Const枚举只能使用常量枚举表达式，与常规枚举不同，它们在编译期间被完全删除。
+//Const enum成员在使用站点内联。这是可能的，因为常量枚举不能有计算成员。
+const enum Directions {
+    Up,
+    Down,
+    Left,
+    Right
+}
+let directions = [Directions.Up, Directions.Down, Directions.Left, Directions.Right]
+//在生成的代码中将成为
+var directions2 = [0 /* Up */, 1 /* Down */, 2 /* Left */, 3 /* Right */];
+
+
+//环境枚举
+
+//环境枚举用于描述已存在的枚举类型的形状。
+
+declare enum Enum6 {
+    A = 1,
+    B,
+    C = 2
+}
+//环境和非环境枚举之间的一个重要区别是，在常规枚举中，如果其前面的枚举成员被认为是常量，
+//则没有初始化程序的成员将被视为常量。相反，始终认为没有初始化程序的环境（和非常量）枚举成员是计算的。
+
+
+
+
+
+
+
+
+
+
