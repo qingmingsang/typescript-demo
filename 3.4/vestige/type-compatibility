@@ -1,0 +1,149 @@
+//类型兼容性
+
+//TypeScript中的类型兼容性基于结构子类型。
+//结构类型是一种仅根据其成员关联类型的方式。这与名义打字形成对比。
+
+///请考虑以下代码：
+interface Named {
+    name: string;
+}
+
+class Person {
+    name: string;
+}
+
+let p: Named;
+// OK, because of structural typing
+p = new Person();
+//在名义上类型的语言（如C＃或Java）中，等效代码将是一个错误，
+//因为Person该类没有明确地将自己描述为Named接口的实现者。
+
+//TypeScript的结构类型系统是根据JavaScript代码的编写方式设计的。
+//因为JavaScript广泛使用了诸如函数表达式和对象文字之类的匿名对象，
+//所以用结构类型系统而不是名义系统来表示JavaScript库中的关系类型更为自然。
+
+//关于可靠性的注意事项
+//TypeScript的类型系统允许在编译时无法识别的某些操作是安全的。
+///当类型系统具有此属性时，它被称为“不可靠”。
+//我们会仔细考虑TypeScript允许不正确行为的地方，在本文档中我们将解释这些发生的位置以及它们背后的激励方案。
+
+
+//开始
+//TypeScript的结构类型系统的基本规则 如果x要兼容y 那么 y至少与x具有相同成员的属性。
+
+//例如：
+interface Named {
+    name: string;
+}
+
+let x: Named;
+// y's inferred type is { name: string; location: string; }
+let y = { name: "Alice", location: "Seattle" };
+x = y;
+//为了检查是否y可以分配x，编译器检查每个属性x以查找相应的兼容属性y。
+//在这种情况下，y必须有一个名为namestring 的成员。它确实如此，因此允许分配。
+
+//检查函数调用参数时使用相同的赋值规则：
+
+function greet(n: Named) {
+    console.log("Hello, " + n.name);
+}
+greet(y); // OK
+//请注意，它y具有额外的location属性，但这不会产生错误。
+//Named在检查兼容性时，仅考虑目标类型的成员（在本例中）。
+
+//该比较过程递归地进行，探索每个成员和子成员的类型。
+
+//比较两个函数
+//虽然比较原始类型和对象类型是相对简单的，但是应该考虑兼容什么类型的函数的问题要多一些。
+//让我们从两个函数的基本示例开始，这两个函数仅在参数列表中有所不同：
+let x2 = (a: number) => 0;
+let y2 = (b: number, s: string) => 0;
+
+y2 = x2; // OK
+//x2 = y2; // Error
+//要检查是否x可分配y，我们首先查看参数列表。
+//每个参数x必须具有y兼容类型的相应参数。
+//请注意，不考虑参数的名称，仅考虑其类型。
+//在这种情况下，每个参数x都有一个相应的兼容参数y，因此允许赋值。
+
+//第二个赋值是一个错误，因为它y有一个必需的第二个参数x，所以不允许赋值。
+
+//您可能想知道为什么我们允许“丢弃”参数，如示例中所示y = x。
+//允许这种赋值的原因是忽略额外的函数参数在JavaScript中实际上很常见。
+//例如，Array#forEach为回调函数提供三个参数：数组元素，索引和包含数组。
+//然而，提供仅使用第一个参数的回调非常有用：
+let items = [1, 2, 3];
+// Don't force these extra parameters
+items.forEach((item, index, array) => console.log(item));
+// Should be OK!
+items.forEach(item => console.log(item));
+
+//现在让我们看看如何处理返回类型，使用两个仅由返回类型不同的函数：
+let x3 = () => ({name: "Alice"});
+let y3 = () => ({name: "Alice", location: "Seattle"});
+x3 = y3; // OK
+//y3 = x3; // Error, because x() lacks a location property
+//类型系统强制源函数的返回类型是目标类型的返回类型的子类型。
+
+//函数参数双向协变
+
+//比较函数参数的类型时，如果source参数可分配给目标参数，则赋值成功，反之亦然。
+//这是不合理的，因为调用者可能最终被赋予一个采用更专用类型的函数，但调用具有较少特殊类型的函数。
+//实际上，这种错误很少见，允许这种情况可以实现许多常见的JavaScript模式。
+
+//一个简短的例子：
+enum EventType { Mouse, Keyboard }
+
+interface Event { timestamp: number; }
+interface MouseEvent extends Event { x2: number; y2: number }
+interface KeyEvent extends Event { keyCode: number }
+
+function listenEvent(eventType: EventType, handler: (n: Event) => void) {
+    /* ... */
+}
+
+// Unsound, but useful and common
+listenEvent(EventType.Mouse, (e: MouseEvent) => console.log(e.x + "," + e.y));
+
+// Undesirable alternatives in presence of soundness
+listenEvent(EventType.Mouse, (e: Event) => console.log((e as MouseEvent).x + "," + (e as MouseEvent).y));
+listenEvent(EventType.Mouse, ((e: MouseEvent) => console.log(e.x + "," + e.y)) as (e: Event) => void);
+
+// Still disallowed (clear error). Type safety enforced for wholly incompatible types
+//listenEvent(EventType.Mouse, (e: number) => console.log(e));
+
+//可选参数和rest参数
+//比较兼容功能时，可选参数和所需参数可互换。
+//源类型的额外可选参数不是错误，并且源类型中没有相应参数的目标类型的可选参数不是错误。
+
+//当函数具有rest参数时，它被视为无限系列的可选参数。
+
+//从类型系统的角度来看，这是不合理的，但从运行时的角度来看，
+//可选参数的概念通常不能很好地执行，因为传入undefined该位置对于大多数函数来说是等效的。
+
+//激励示例是一个函数的通用模式，
+//它接受一个回调并用一些可预测的（对程序员）但未知（对于类型系统）参数的数量来调用它：
+function invokeLater(args: any[], callback: (...args: any[]) => void) {
+    /* ... Invoke callback with 'args' ... */
+}
+
+// Unsound - invokeLater "might" provide any number of arguments
+invokeLater([1, 2], (x, y) => console.log(x + ", " + y));
+
+// Confusing (x and y are actually required) and undiscoverable
+invokeLater([1, 2], (x?, y?) => console.log(x + ", " + y));
+
+//带有重载的函数
+//当函数具有重载时，源类型中的每个重载必须与目标类型上的兼容签名匹配。
+//这确保了可以在与源函数相同的所有情况下调用目标函数。
+
+
+
+
+
+
+
+
+
+
