@@ -1,0 +1,39 @@
+// interface Person {
+//     name: string;
+//     age: number;
+// }
+
+// let tom: Person = {
+//     name: 'Tom',
+//     age: 25
+// };
+
+
+// let tom2: Person = {
+//     name: 'Tom'
+// };
+//TS2741: Property 'age' is missing in type '{ name: string; }' but required in type 'Person'.
+
+// let tom3: Person = {
+//     name: 'Tom',
+//     age: 25,
+//     gender: 'male'
+// };
+// TS2322: Type '{ name: string; age: number; gender: string; }' is not assignable to type 'Person'.
+//Object literal may only specify known properties, and 'gender' does not exist in type 'Person'.
+
+
+interface Person {
+    name: string;
+    age?: number;
+    [propName: string]: string;
+}
+
+let tom2: Person = {
+    name: 'Tom',
+    age: 25,
+    gender: 'male'
+};
+
+
+

@@ -157,9 +157,250 @@ function getLength(something: string | number): string | number {
 let myFavoriteNumber: string | number;
 myFavoriteNumber = 'seven';
 console.log(myFavoriteNumber.length); // 5
+
 myFavoriteNumber = 7;
 console.log(myFavoriteNumber.length); // 编译时报错
 ```
+
+# 对象的类型——接口
+在 TypeScript 中，使用接口（Interfaces）来定义对象的类型。
+TypeScript 中的接口是一个非常灵活的概念，除了可用于对类的一部分行为进行抽象以外，也常用于对「对象的形状（Shape）」进行描述。
+
+我们定义了一个接口 Person，接着定义了一个变量 tom，它的类型是 Person。这样，我们就约束了 tom 的形状必须和接口 Person 一致。
+接口一般首字母大写。有的编程语言中会建议接口的名称加上 I 前缀。
+赋值的时候，变量的形状必须和接口的形状保持一致。
+```
+interface Person {
+    name: string;
+    age: number;
+}
+let tom: Person = {
+    name: 'Tom',
+    age: 25
+};
+```
+
+定义的变量比接口少了一些属性是不允许的
+```
+let tom2: Person = {
+    name: 'Tom'
+};
+//TS2741: Property 'age' is missing in type '{ name: string; }' but required in type 'Person'.
+```
+
+多一些属性也是不允许的
+```
+let tom3: Person = {
+    name: 'Tom',
+    age: 25,
+    gender: 'male'
+};
+// TS2322: Type '{ name: string; age: number; gender: string; }' is not assignable to type 'Person'.
+//Object literal may only specify known properties, and 'gender' does not exist in type 'Person'.
+```
+
+## 可选属性
+可选属性的含义是该属性可以不存在。
+但是不允许添加未定义的属性
+```
+interface Person {
+    name: string;
+    age?: number;
+}
+
+let tom: Person = {
+    name: 'Tom'
+};
+
+let tom2: Person = {
+    name: 'Tom',
+    age: 25
+};
+
+let tom3: Person = {
+    name: 'Tom',
+    age: 25,
+    gender: 'male'
+};//error
+```
+
+## 任意属性
+有时候我们希望一个接口允许有任意的属性，可以使用如下方式：
+```
+interface Person {
+    name: string;
+    age?: number;
+    [propName: string]: any;
+}
+
+let tom: Person = {
+    name: 'Tom',
+    gender: 'male'
+};
+```
+使用 `[propName: string]` 定义了任意属性取 `string` 类型的值。
+
+需要注意的是，一旦定义了任意属性，
+那么确定属性和可选属性的类型都必须是它的类型的子集：
+```
+interface Person {
+    name: string;
+    age?: number;
+    [propName: string]: string;
+}
+
+let tom: Person = {
+    name: 'Tom',
+    age: 25,
+    gender: 'male'
+};
+//TS2322: Type '{ name: string; age: number; gender: string; }' is not assignable to type 'Person'.
+//Property 'age' is incompatible with index signature.
+//Type 'number' is not assignable to type 'string'.
+```
+上例中，任意属性的值允许是 string，但是可选属性 age 的值却是 number，number 不是 string 的子属性，所以报错了。
+另外，在报错信息中可以看出，此时 { name: 'Tom', age: 25, gender: 'male' } 的类型被推断成了 `{ [x: string]: string | number; name: string; age: number; gender: string; }`，这是联合类型和接口的结合。
+
+## 只读属性
+有时候我们希望对象中的一些字段只能在创建的时候被赋值，那么可以用 readonly 定义只读属性：
+```
+interface Person {
+    readonly id: number;
+    name: string;
+    age?: number;
+    [propName: string]: any;
+}
+
+let tom: Person = {
+    id: 89757,
+    name: 'Tom',
+    gender: 'male'
+};
+
+tom.id = 9527;
+// index.ts(14,5): error TS2540: Cannot assign to 'id' because it is a constant or a read-only property.
+```
+上例中，使用 readonly 定义的属性 id 初始化后，又被赋值了，所以报错了。
+
+注意，只读的约束存在于第一次给对象赋值的时候，而不是第一次给只读属性赋值的时候：
+```
+interface Person {
+    readonly id: number;
+    name: string;
+    age?: number;
+    [propName: string]: any;
+}
+
+let tom: Person = {
+    name: 'Tom',
+    gender: 'male'
+};
+
+tom.id = 89757;
+// index.ts(8,5): error TS2322: Type '{ name: string; gender: string; }' is not assignable to type 'Person'.
+//   Property 'id' is missing in type '{ name: string; gender: string; }'.
+// index.ts(13,5): error TS2540: Cannot assign to 'id' because it is a constant or a read-only property.
+```
+上例中，报错信息有两处，第一处是在对 tom 进行赋值的时候，没有给 id 赋值。
+第二处是在给 tom.id 赋值的时候，由于它是只读属性，所以报错了。
+
+
+# 数组的类型
+
+## 「类型 + 方括号」表示法
+最简单的方法是使用`「类型 + 方括号」`来表示数组：
+`let fibonacci: number[] = [1, 1, 2, 3, 5];`
+
+数组的项中不允许出现其他的类型：
+```
+let fibonacci: number[] = [1, '1', 2, 3, 5];
+
+// Type 'string' is not assignable to type 'number'.
+```
+
+数组的一些方法的参数也会根据数组在定义时约定的类型进行限制：
+```
+let fibonacci: number[] = [1, 1, 2, 3, 5];
+fibonacci.push('8');
+
+// Argument of type '"8"' is not assignable to parameter of type 'number'.
+```
+上例中，push 方法只允许传入 number 类型的参数，但是却传了一个 "8" 类型的参数，所以报错了。
+
+## 数组泛型
+也可以使用数组泛型（Array Generic） `Array<elemType>` 来表示数组：
+`let fibonacci: Array<number> = [1, 1, 2, 3, 5];`
+
+## 用接口表示数组
+接口也可以用来描述数组：
+```
+interface NumberArray {
+    [index: number]: number;
+}
+let fibonacci: NumberArray = [1, 1, 2, 3, 5];
+```
+NumberArray 表示：只要索引的类型是数字时，那么值的类型必须是数字。
+虽然接口也可以用来描述数组，但是一般不会这么做，因为这种方式比前两种方式复杂多了。
+不过有一种情况例外，那就是它常用来表示类数组。
+
+## 类数组
+类数组（Array-like Object）不是数组类型，比如 arguments：
+```
+function sum() {
+    let args: number[] = arguments;
+}
+// Type 'IArguments' is missing the following properties from type 'number[]': pop, push, concat, join, and 24 more.
+```
+
+arguments 实际上是一个类数组，不能用普通的数组的方式来描述，而应该用接口：
+```
+function sum() {
+    let args: {
+        [index: number]: number;
+        length: number;
+        callee: Function;
+    } = arguments;
+}
+```
+在这个例子中，除了约束当索引的类型是数字时，值的类型必须是数字之外，也约束了它还有 length 和 callee 两个属性。
+
+事实上常用的类数组都有自己的接口定义，如 `IArguments, NodeList, HTMLCollection` 等：
+```
+function sum() {
+    let args: IArguments = arguments;
+}
+```
+
+其中 IArguments 是 TypeScript 中定义好了的类型，它实际上就是：
+```
+interface IArguments {
+    [index: number]: any;
+    length: number;
+    callee: Function;
+}
+```
+
+## any 在数组中的应用
+一个比较常见的做法是，用 any 表示数组中允许出现任意类型：
+`let list: any[] = ['xcatliu', 25, { website: 'http://xcatliu.com' }];`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
