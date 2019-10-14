@@ -1,6 +1,16 @@
-let fibonacci: number[] = [1, 1, 2, 3, 5];
+// let tom: [string, number];
+// tom[0] = 'Tom';//error
+// tom[1] = 25;//error
 
-//let fibonacci2: number[] = [1, '1', 2, 3, 5];
+// let tom: [string, number] = ['Tom', 25];
+// console.log(tom)
+// console.log(tom[0].slice(1))//om
+// console.log(tom[1].toFixed(2))//25.00
 
-let fibonacci3: string[] = ['1', '1', '2', '3', '5'];
+// let tom: [string, number];
+// tom[0] = 'Tom';
 
+let tom: [string, number];
+tom = ['Tom', 25];
+tom.push('male');
+console.log(tom)//["Tom", 25, "male"]
