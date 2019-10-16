@@ -1,16 +1,16 @@
-// let tom: [string, number];
-// tom[0] = 'Tom';//error
-// tom[1] = 25;//error
+class Animal {
+    public name;
+    public constructor(name) {
+        this.name = name;
+    }
+}
 
-// let tom: [string, number] = ['Tom', 25];
-// console.log(tom)
-// console.log(tom[0].slice(1))//om
-// console.log(tom[1].toFixed(2))//25.00
+let a = new Animal('Jack');
+console.log(a.name); // Jack
+a.name = 'Tom';
+console.log(a.name); // Tom
+console.log(a.constructor);
+//  Animal(name) {
+//     this.name = name;
+// }
 
-// let tom: [string, number];
-// tom[0] = 'Tom';
-
-let tom: [string, number];
-tom = ['Tom', 25];
-tom.push('male');
-console.log(tom)//["Tom", 25, "male"]
